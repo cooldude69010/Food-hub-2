@@ -1,0 +1,1461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0A0A0A" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Food Hub POS" />
+  <title>Food Hub – POS Billing & Thermal Print</title>
+  <link id="app-favicon" rel="icon" type="image/png" />
+  <link id="apple-icon" rel="apple-touch-icon" />
+  <link id="app-manifest" rel="manifest" />
+  <style>
+    :root {
+      --bg: #0A0A0A;
+      --card: #141414;
+      --card-2: #1C1C1C;
+      --border: #2A2A2A;
+      --yellow: #FACC15;
+      --yellow-dark: #EAB308;
+      --text: #FFFFFF;
+      --muted: #9CA3AF;
+      --veg: #22C55E;
+      --nonveg: #EF4444;
+      --extra: #38BDF8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      padding-bottom: 135px;
+      min-height: 100vh;
+    }
+    /* Header */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: rgba(10, 10, 10, 0.96);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 14px;
+    }
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .logo-badge {
+      display: inline-flex;
+      align-items: center;
+      font-weight: 900;
+      font-size: 22px;
+      letter-spacing: -0.5px;
+      line-height: 1;
+    }
+    .logo-food { color: #FFFFFF; margin-right: 3px; }
+    .logo-hub {
+      background: var(--yellow);
+      color: #0A0A0A;
+      padding: 3px 7px;
+      border-radius: 6px;
+    }
+    .sub-brand {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+    .bt-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--card-2);
+      border: 1px solid var(--border);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 8px 11px;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+    .bt-btn.connected {
+      border-color: #22C55E;
+      background: rgba(34, 197, 94, 0.14);
+      color: #4ADE80;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #EF4444;
+    }
+    .bt-btn.connected .dot { background: #22C55E; }
+
+    /* Container */
+    .container { max-width: 720px; margin: 0 auto; padding: 12px 14px; }
+
+    /* Search & Filters */
+    .search-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .search-input {
+      flex: 1;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+    }
+    .search-input:focus { border-color: var(--yellow); }
+    .cats {
+      display: flex;
+      gap: 7px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      margin-bottom: 10px;
+      scrollbar-width: none;
+    }
+    .cats::-webkit-scrollbar { display: none; }
+    .cat-chip {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 7px 13px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .cat-chip.active {
+      background: var(--yellow);
+      color: #0A0A0A;
+      border-color: var(--yellow);
+    }
+
+    /* Quick Extra Strip */
+    .extras-strip {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px;
+      margin-bottom: 12px;
+    }
+    .extras-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--yellow);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .extras-scroll {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .extras-scroll::-webkit-scrollbar { display: none; }
+    .extra-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #1F1F1F;
+      border: 1px dashed var(--yellow);
+      color: #fff;
+      padding: 7px 11px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .extra-pill span.price { color: var(--yellow); }
+
+    /* Menu Grid */
+    .menu-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 9px;
+    }
+    @media (min-width: 540px) {
+      .menu-grid { grid-template-columns: 1fr 1fr; }
+    }
+    .item-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    .item-info { flex: 1; min-width: 0; }
+    .item-top {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+    .type-box {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .type-box.veg { border: 1.5px solid var(--veg); }
+    .type-box.veg::after { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--veg); }
+    .type-box.nonveg { border: 1.5px solid var(--nonveg); }
+    .type-box.nonveg::after { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--nonveg); }
+    .type-box.extra { border: 1.5px solid var(--extra); }
+    .type-box.extra::after { content: "+"; font-size: 10px; font-weight: 900; color: var(--extra); line-height: 1; }
+
+    .cat-tag {
+      font-size: 10px;
+      color: var(--muted);
+      background: #1F1F1F;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+    .item-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+      line-height: 1.25;
+    }
+    .item-price-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .item-price {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--yellow);
+    }
+    .quick-edit-btn {
+      background: #222;
+      border: 1px solid #333;
+      color: #D1D5DB;
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    /* Qty Controls */
+    .qty-box {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .add-btn {
+      background: var(--yellow);
+      color: #0A0A0A;
+      border: none;
+      font-weight: 800;
+      font-size: 13px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .stepper {
+      display: inline-flex;
+      align-items: center;
+      background: #222;
+      border: 1px solid var(--yellow);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .stepper button {
+      background: transparent;
+      border: none;
+      color: var(--yellow);
+      font-size: 17px;
+      font-weight: 900;
+      width: 30px;
+      height: 32px;
+      cursor: pointer;
+    }
+    .stepper span {
+      min-width: 24px;
+      text-align: center;
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    /* Floating Cart Bar */
+    .cart-bar {
+      position: fixed;
+      bottom: 62px;
+      left: 12px;
+      right: 12px;
+      max-width: 696px;
+      margin: 0 auto;
+      background: var(--yellow);
+      color: #0A0A0A;
+      border-radius: 14px;
+      padding: 12px 16px;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 800;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.7);
+      z-index: 35;
+      cursor: pointer;
+    }
+    .cart-bar.show { display: flex; }
+
+    /* Bottom Navigation */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #111111;
+      border-top: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      z-index: 40;
+      height: 56px;
+    }
+    .nav-btn {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      cursor: pointer;
+    }
+    .nav-btn.active { color: var(--yellow); }
+    .nav-icon { font-size: 16px; }
+
+    /* Sections */
+    .tab-view { display: none; }
+    .tab-view.active { display: block; }
+
+    /* Form & Menu Manager */
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+    .panel h3 {
+      font-size: 15px;
+      color: var(--yellow);
+      margin-bottom: 10px;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .form-full { grid-column: 1 / -1; }
+    .field-label {
+      display: block;
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+    .input, .select {
+      width: 100%;
+      background: #1D1D1D;
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 9px 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
+    }
+    .input:focus, .select:focus { border-color: var(--yellow); }
+    .primary-btn {
+      width: 100%;
+      background: var(--yellow);
+      color: #0A0A0A;
+      border: none;
+      padding: 11px;
+      border-radius: 9px;
+      font-weight: 800;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .secondary-btn {
+      background: #222;
+      color: #fff;
+      border: 1px solid var(--border);
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    /* Inline Price Editor Row */
+    .manage-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .manage-row:last-child { border-bottom: none; }
+    .price-edit-group {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .price-input-sm {
+      width: 68px;
+      background: #1D1D1D;
+      border: 1px solid var(--yellow);
+      color: var(--yellow);
+      font-weight: 800;
+      font-size: 13px;
+      padding: 6px 7px;
+      border-radius: 6px;
+      text-align: right;
+    }
+    .save-sm-btn {
+      background: var(--yellow);
+      color: #0A0A0A;
+      border: none;
+      font-weight: 800;
+      font-size: 11px;
+      padding: 7px 9px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .del-sm-btn {
+      background: rgba(239, 68, 68, 0.15);
+      color: #F87171;
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      font-weight: 800;
+      font-size: 11px;
+      padding: 7px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    /* Modal Drawer */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.82);
+      z-index: 60;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal-sheet {
+      background: #121212;
+      border-top: 2px solid var(--yellow);
+      border-radius: 18px 18px 0 0;
+      width: 100%;
+      max-width: 640px;
+      max-height: 92vh;
+      overflow-y: auto;
+      padding: 16px;
+    }
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .close-btn {
+      background: #222;
+      border: 1px solid var(--border);
+      color: #fff;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    /* Thermal Receipt Preview */
+    .receipt-paper {
+      background: #FFFFFF;
+      color: #000000;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 12px;
+      line-height: 1.35;
+      padding: 12px;
+      border-radius: 6px;
+      width: 100%;
+      max-width: 300px;
+      margin: 10px auto;
+      white-space: pre-wrap;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+    .print-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .btn-bt-print {
+      grid-column: 1 / -1;
+      background: var(--yellow);
+      color: #0A0A0A;
+      border: none;
+      padding: 13px;
+      border-radius: 10px;
+      font-weight: 900;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .btn-rawbt {
+      background: #1E3A8A;
+      color: #DBEAFE;
+      border: 1px solid #3B82F6;
+      padding: 10px;
+      border-radius: 9px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .btn-wa {
+      background: #14532D;
+      color: #DCFCE7;
+      border: 1px solid #22C55E;
+      padding: 10px;
+      border-radius: 9px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .btn-sysprint {
+      grid-column: 1 / -1;
+      background: #222;
+      color: #fff;
+      border: 1px solid var(--border);
+      padding: 10px;
+      border-radius: 9px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    /* Stats */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .stat-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      text-align: center;
+    }
+    .stat-val { font-size: 16px; font-weight: 900; color: var(--yellow); }
+    .stat-lbl { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      top: 72px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--yellow);
+      color: #0A0A0A;
+      font-weight: 800;
+      font-size: 12px;
+      padding: 8px 16px;
+      border-radius: 999px;
+      z-index: 90;
+      display: none;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+    }
+
+    /* 58mm Thermal Print Media CSS */
+    #print-root { display: none; }
+    @page { size: 58mm auto; margin: 0; }
+    @media print {
+      html, body {
+        background: #fff !important;
+        color: #000 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        height: auto !important;
+        overflow: visible !important;
+      }
+      body > *:not(#print-root) { display: none !important; }
+      #print-root {
+        display: block !important;
+        width: 58mm;
+        margin: 0;
+        padding: 2mm;
+        box-sizing: border-box;
+        font-family: "Courier New", Courier, monospace;
+        font-size: 10px;
+        line-height: 1.25;
+        white-space: pre;
+        color: #000 !important;
+        background: #fff !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="toast" class="toast"></div>
+  <div id="print-root"></div>
+
+  <header>
+    <div class="header-top">
+      <div>
+        <div class="brand">
+          <div class="logo-badge">
+            <span class="logo-food">Food</span><span class="logo-hub">hub</span>
+          </div>
+        </div>
+        <div class="sub-brand">Chinese Fast Food Center • Jharsuguda</div>
+      </div>
+      <button id="bt-status-btn" class="bt-btn" onclick="connectBluetoothPrinter()">
+        <span class="dot"></span>
+        <span id="bt-status-text">Connect Printer</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- TAB 1: POS BILLING -->
+    <section id="tab-pos" class="tab-view active">
+      <div class="search-row">
+        <input id="search-input" class="search-input" type="text" placeholder="Search Noodles, Momos, Chinese Bhel..." oninput="renderPOS()" />
+      </div>
+
+      <div id="category-bar" class="cats"></div>
+
+      <!-- Quick Extra Options Strip -->
+      <div class="extras-strip">
+        <div class="extras-header">
+          <span>⚡ Quick Extra Add-Ons</span>
+          <button class="quick-edit-btn" onclick="switchTab('manage')">+ Add / Edit Price</button>
+        </div>
+        <div id="extras-strip-list" class="extras-scroll"></div>
+      </div>
+
+      <div id="pos-menu-grid" class="menu-grid"></div>
+    </section>
+
+    <!-- TAB 2: EDIT PRICE & ADD MENU / EXTRAS -->
+    <section id="tab-manage" class="tab-view">
+      <div class="panel">
+        <h3>+ Add New Menu Item or Extra Option</h3>
+        <div class="form-grid">
+          <div class="form-full">
+            <label class="field-label">Item Name</label>
+            <input id="new-name" class="input" type="text" placeholder="e.g. Extra Paneer / Schezwan Noodles" />
+          </div>
+          <div>
+            <label class="field-label">Price (₹)</label>
+            <input id="new-price" class="input" type="number" min="1" placeholder="e.g. 20" />
+          </div>
+          <div>
+            <label class="field-label">Category</label>
+            <select id="new-cat" class="select">
+              <option value="Veg Items">Veg Items</option>
+              <option value="Non-Veg Items">Non-Veg Items</option>
+              <option value="Extra Options">Extra Options (Add-On)</option>
+              <option value="Soup">Soup</option>
+              <option value="Momos">Momos</option>
+            </select>
+          </div>
+          <div class="form-full">
+            <label class="field-label">Food Type</label>
+            <select id="new-type" class="select">
+              <option value="veg">Veg (Green Dot)</option>
+              <option value="nonveg">Non-Veg (Red Dot)</option>
+              <option value="extra">Extra Add-On (+)</option>
+            </select>
+          </div>
+        </div>
+        <button class="primary-btn" onclick="addNewMenuItem()">+ Add to Menu</button>
+      </div>
+
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <h3 style="margin:0;">Edit Prices & Manage Items</h3>
+          <button class="secondary-btn" onclick="resetDefaultMenu()">Reset Default</button>
+        </div>
+        <input id="manage-search" class="search-input" style="margin-bottom:10px;" type="text" placeholder="Filter items to edit price..." oninput="renderManageList()" />
+        <div id="manage-list"></div>
+      </div>
+    </section>
+
+    <!-- TAB 3: SALES & BILL HISTORY -->
+    <section id="tab-sales" class="tab-view">
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div id="stat-total" class="stat-val">₹0</div>
+          <div class="stat-lbl">Total Sales</div>
+        </div>
+        <div class="stat-box">
+          <div id="stat-count" class="stat-val">0</div>
+          <div class="stat-lbl">Total Bills</div>
+        </div>
+        <div class="stat-box">
+          <div id="stat-upi" class="stat-val">₹0</div>
+          <div class="stat-lbl">UPI / Cash</div>
+        </div>
+      </div>
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <h3 style="margin:0;">Saved Bills (Reprint Thermal)</h3>
+          <button class="del-sm-btn" onclick="clearBillsHistory()">Clear History</button>
+        </div>
+        <div id="bills-list"></div>
+      </div>
+    </section>
+
+    <!-- TAB 4: ANDROID APK & THERMAL PRINTER SETUP -->
+    <section id="tab-apk" class="tab-view">
+      <div class="panel">
+        <h3>📱 Add Food Hub App to Android Home Screen</h3>
+        <p style="font-size:13px;color:#D1D5DB;line-height:1.5;margin-bottom:10px;">
+          You can install this app directly onto your Android Home Screen with the yellow <strong>Food hub</strong> icon—no Play Store required:
+        </p>
+        <ol style="font-size:13px;color:#D1D5DB;line-height:1.65;padding-left:18px;margin-bottom:12px;">
+          <li>Open this file in <strong>Google Chrome</strong> on your Android phone.</li>
+          <li>Tap the <strong>⋮ (3-dot menu)</strong> in the top-right corner.</li>
+          <li>Select <strong>"Add to Home screen"</strong> or <strong>"Install app"</strong>.</li>
+          <li>The <strong>Food hub</strong> launcher icon will appear on your home screen and open full-screen offline.</li>
+        </ol>
+        <button id="pwa-install-btn" class="primary-btn" onclick="triggerInstallPrompt()">Install App on Home Screen</button>
+      </div>
+
+      <div class="panel">
+        <h3>🖨️ 58mm / 80mm Bluetooth Thermal Printer Guide</h3>
+        <ul style="font-size:13px;color:#D1D5DB;line-height:1.65;padding-left:18px;">
+          <li><strong>Direct Bluetooth (BLE):</strong> Turn on your thermal printer (MTP-II, PT-210, Retsol, TVSE, Xprinter) and tap <em>Connect Printer</em> at the top.</li>
+          <li><strong>Android RawBT Print:</strong> If your printer uses Classic Bluetooth (PIN 0000 or 1234), install the free <em>RawBT</em> app on Android, pair your printer once, and tap <strong>Print via RawBT</strong> on any bill.</li>
+          <li><strong>System Print:</strong> Tap <strong>System 58mm Print</strong> to print through Android's built-in print service.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <!-- Floating Cart Bar -->
+  <div id="cart-bar" class="cart-bar" onclick="openBillModal()">
+    <div>
+      <span id="cart-count">0 Items</span> • <span id="cart-total">₹0</span>
+    </div>
+    <div>View Bill & Print →</div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-tab="pos" onclick="switchTab('pos')">
+      <span class="nav-icon">🧾</span>
+      <span>Billing POS</span>
+    </button>
+    <button class="nav-btn" data-tab="manage" onclick="switchTab('manage')">
+      <span class="nav-icon">✏️</span>
+      <span>Price & Menu</span>
+    </button>
+    <button class="nav-btn" data-tab="sales" onclick="switchTab('sales')">
+      <span class="nav-icon">📊</span>
+      <span>Sales & Bills</span>
+    </button>
+    <button class="nav-btn" data-tab="apk" onclick="switchTab('apk')">
+      <span class="nav-icon">📲</span>
+      <span>App & Setup</span>
+    </button>
+  </nav>
+
+  <!-- Bill & Thermal Print Drawer -->
+  <div id="bill-modal" class="modal-backdrop">
+    <div class="modal-sheet">
+      <div class="modal-head">
+        <h3 style="color:var(--yellow);font-size:16px;">🧾 Customer Bill & Thermal Print</h3>
+        <button class="close-btn" onclick="closeBillModal()">✕</button>
+      </div>
+
+      <div id="modal-cart-items" style="margin-bottom:10px;"></div>
+
+      <div class="form-grid">
+        <div>
+          <label class="field-label">Customer / Table</label>
+          <input id="bill-customer" class="input" type="text" placeholder="Walk-in / Table 1" oninput="updateReceiptPreview()" />
+        </div>
+        <div>
+          <label class="field-label">Order Type</label>
+          <select id="bill-order-type" class="select" onchange="updateReceiptPreview()">
+            <option value="Takeaway">Takeaway / Parcel</option>
+            <option value="Dine-In">Dine-In</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Payment Mode</label>
+          <select id="bill-payment" class="select" onchange="updateReceiptPreview()">
+            <option value="Cash">Cash</option>
+            <option value="UPI">UPI / QR</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Discount (₹)</label>
+          <input id="bill-discount" class="input" type="number" min="0" value="0" oninput="updateReceiptPreview()" />
+        </div>
+      </div>
+
+      <!-- Live 58mm Thermal Receipt Preview -->
+      <div id="print-area" class="receipt-paper"></div>
+
+      <div class="print-actions">
+        <button class="btn-bt-print" onclick="printThermalBluetooth()">🖨️ Save Bill & Bluetooth Thermal Print</button>
+        <button class="btn-rawbt" onclick="printViaRawBT()">📲 Print via RawBT App</button>
+        <button class="btn-wa" onclick="shareWhatsAppBill()">💬 Share WhatsApp Bill</button>
+        <button class="btn-sysprint" onclick="printSystem58mm()">🖨️ System 58mm Print / Clear Cart</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "foodhub_jharsuguda_menu_v3";
+    const BILLS_KEY = "foodhub_jharsuguda_bills_v3";
+
+    const DEFAULT_MENU = [
+      // Veg Items
+      { id: "v1", name: "Veg Noodles", price: 60, category: "Veg Items", type: "veg" },
+      { id: "v2", name: "Veg Manchurian", price: 60, category: "Veg Items", type: "veg" },
+      { id: "v3", name: "Manchurian Noodles", price: 60, category: "Veg Items", type: "veg" },
+      { id: "v4", name: "Veg Roll", price: 40, category: "Veg Items", type: "veg" },
+      { id: "v5", name: "Paneer Pakoda", price: 100, category: "Veg Items", type: "veg" },
+      { id: "v6", name: "Paneer Chilli", price: 100, category: "Veg Items", type: "veg" },
+      { id: "v7", name: "Mushroom Pakoda", price: 100, category: "Veg Items", type: "veg" },
+      { id: "v8", name: "Mushroom Chilli", price: 100, category: "Veg Items", type: "veg" },
+      { id: "v9", name: "Veg Fried Rice", price: 80, category: "Veg Items", type: "veg" },
+      { id: "v10", name: "Food Hub Special Chinese Bhel", price: 100, category: "Veg Items", type: "veg" },
+      // Non-Veg Items
+      { id: "nv1", name: "Egg Noodles", price: 80, category: "Non-Veg Items", type: "nonveg" },
+      { id: "nv2", name: "Chicken Noodles", price: 100, category: "Non-Veg Items", type: "nonveg" },
+      { id: "nv3", name: "Chicken Pakoda", price: 100, category: "Non-Veg Items", type: "nonveg" },
+      { id: "nv4", name: "Chicken Roll", price: 50, category: "Non-Veg Items", type: "nonveg" },
+      { id: "nv5", name: "Chicken Chilli", price: 100, category: "Non-Veg Items", type: "nonveg" },
+      { id: "nv6", name: "Egg Fried Rice", price: 80, category: "Non-Veg Items", type: "nonveg" },
+      { id: "nv7", name: "Chicken Fried Rice", price: 100, category: "Non-Veg Items", type: "nonveg" },
+      // Extra Options
+      { id: "ex1", name: "Extra Egg", price: 15, category: "Extra Options", type: "extra" },
+      // Soup
+      { id: "s1", name: "Veg Soup", price: 40, category: "Soup", type: "veg" },
+      { id: "s2", name: "Egg Soup", price: 40, category: "Soup", type: "nonveg" },
+      { id: "s3", name: "Chicken Soup", price: 50, category: "Soup", type: "nonveg" },
+      // Momos
+      { id: "m1", name: "Veg Momos", price: 60, category: "Momos", type: "veg" },
+      { id: "m2", name: "Chicken Momos", price: 100, category: "Momos", type: "nonveg" },
+      { id: "m3", name: "Momos Chilli", price: 120, category: "Momos", type: "nonveg" }
+    ];
+
+    let menu = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null") || [...DEFAULT_MENU];
+    let bills = JSON.parse(localStorage.getItem(BILLS_KEY) || "[]");
+    let cart = {};
+    let activeCategory = "All";
+    let btCharacteristic = null;
+    let deferredPrompt = null;
+
+    function saveMenu() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(menu));
+    }
+
+    function showToast(msg) {
+      const el = document.getElementById("toast");
+      el.textContent = msg;
+      el.style.display = "block";
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => { el.style.display = "none"; }, 2200);
+    }
+
+    // Generate Canvas Launcher Icon & PWA Manifest
+    function initBrandingIcon() {
+      const canvas = document.createElement("canvas");
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext("2d");
+
+      ctx.fillStyle = "#0A0A0A";
+      ctx.fillRect(0, 0, 512, 512);
+
+      ctx.strokeStyle = "#FACC15";
+      ctx.lineWidth = 14;
+      ctx.beginPath();
+      ctx.roundRect(18, 18, 476, 476, 100);
+      ctx.stroke();
+
+      ctx.font = "900 92px Arial, sans-serif";
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillText("Food", 66, 275);
+
+      ctx.fillStyle = "#FACC15";
+      ctx.beginPath();
+      ctx.roundRect(306, 195, 142, 105, 22);
+      ctx.fill();
+
+      ctx.font = "900 72px Arial, sans-serif";
+      ctx.fillStyle = "#0A0A0A";
+      ctx.fillText("hub", 315, 273);
+
+      const dataUrl = canvas.toDataURL("image/png");
+      document.getElementById("app-favicon").href = dataUrl;
+      document.getElementById("apple-icon").href = dataUrl;
+
+      const manifest = {
+        name: "Food Hub – Chinese Fast Food POS",
+        short_name: "Food Hub",
+        start_url: ".",
+        display: "standalone",
+        background_color: "#0A0A0A",
+        theme_color: "#0A0A0A",
+        icons: [{ src: dataUrl, sizes: "512x512", type: "image/png" }]
+      };
+      const blob = new Blob([JSON.stringify(manifest)], { type: "application/json" });
+      document.getElementById("app-manifest").href = URL.createObjectURL(blob);
+    }
+
+    window.addEventListener("beforeinstallprompt", (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+    });
+
+    function triggerInstallPrompt() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt = null;
+      } else {
+        showToast("Tap Chrome ⋮ Menu → Add to Home screen");
+      }
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll(".tab-view").forEach(el => el.classList.remove("active"));
+      document.querySelectorAll(".nav-btn").forEach(el => el.classList.remove("active"));
+      document.getElementById("tab-" + tab).classList.add("active");
+      document.querySelector(`.nav-btn[data-tab="${tab}"]`).classList.add("active");
+      if (tab === "manage") renderManageList();
+      if (tab === "sales") renderSales();
+    }
+
+    function renderCategories() {
+      const cats = ["All", "Veg Items", "Non-Veg Items", "Extra Options", "Soup", "Momos"];
+      document.getElementById("category-bar").innerHTML = cats.map(c =>
+        `<button class="cat-chip ${activeCategory === c ? "active" : ""}" onclick="setCategory('${c}')">${c}</button>`
+      ).join("");
+    }
+
+    function setCategory(cat) {
+      activeCategory = cat;
+      renderCategories();
+      renderPOS();
+    }
+
+    function renderExtrasStrip() {
+      const extras = menu.filter(m => m.category === "Extra Options" || m.type === "extra");
+      const el = document.getElementById("extras-strip-list");
+      if (!extras.length) {
+        el.innerHTML = `<span style="font-size:12px;color:#9CA3AF;">No extra items yet. Tap + Add / Edit Price.</span>`;
+        return;
+      }
+      el.innerHTML = extras.map(item => `
+        <button class="extra-pill" onclick="changeQty('${item.id}', 1)">
+          <span>+ ${item.name}</span>
+          <span class="price">₹${item.price}</span>
+        </button>
+      `).join("");
+    }
+
+    function renderPOS() {
+      renderExtrasStrip();
+      const q = document.getElementById("search-input").value.trim().toLowerCase();
+      const filtered = menu.filter(item => {
+        const matchCat = activeCategory === "All" || item.category === activeCategory;
+        const matchQ = !q || item.name.toLowerCase().includes(q) || item.category.toLowerCase().includes(q);
+        return matchCat && matchQ;
+      });
+
+      const grid = document.getElementById("pos-menu-grid");
+      grid.innerHTML = filtered.map(item => {
+        const qty = cart[item.id] || 0;
+        return `
+          <div class="item-card">
+            <div class="item-info">
+              <div class="item-top">
+                <span class="type-box ${item.type}"></span>
+                <span class="cat-tag">${item.category}</span>
+              </div>
+              <div class="item-name">${item.name}</div>
+              <div class="item-price-row">
+                <span class="item-price">₹${item.price}/-</span>
+                <button class="quick-edit-btn" onclick="quickEditPrice('${item.id}')">✏️ Price</button>
+              </div>
+            </div>
+            <div class="qty-box">
+              ${qty === 0
+                ? `<button class="add-btn" onclick="changeQty('${item.id}', 1)">+ ADD</button>`
+                : `<div class="stepper">
+                    <button onclick="changeQty('${item.id}', -1)">−</button>
+                    <span>${qty}</span>
+                    <button onclick="changeQty('${item.id}', 1)">+</button>
+                  </div>`
+              }
+            </div>
+          </div>
+        `;
+      }).join("");
+      updateCartBar();
+    }
+
+    function quickEditPrice(id) {
+      const item = menu.find(m => m.id === id);
+      if (!item) return;
+      const val = prompt(`Update price for "${item.name}" (₹):`, item.price);
+      if (val !== null && !isNaN(parseFloat(val)) && parseFloat(val) > 0) {
+        item.price = Math.round(parseFloat(val));
+        saveMenu();
+        renderPOS();
+        showToast(`${item.name} updated to ₹${item.price}`);
+      }
+    }
+
+    function changeQty(id, delta) {
+      const next = (cart[id] || 0) + delta;
+      if (next <= 0) delete cart[id];
+      else cart[id] = next;
+      renderPOS();
+      if (document.getElementById("bill-modal").classList.contains("open")) {
+        renderModalCart();
+        updateReceiptPreview();
+      }
+    }
+
+    function updateCartBar() {
+      let count = 0, total = 0;
+      for (const [id, qty] of Object.entries(cart)) {
+        const item = menu.find(m => m.id === id);
+        if (item) {
+          count += qty;
+          total += item.price * qty;
+        }
+      }
+      const bar = document.getElementById("cart-bar");
+      if (count > 0) {
+        bar.classList.add("show");
+        document.getElementById("cart-count").textContent = `${count} Item${count > 1 ? "s" : ""}`;
+        document.getElementById("cart-total").textContent = `₹${total}`;
+      } else {
+        bar.classList.remove("show");
+      }
+    }
+
+    // Menu & Price Manager
+    function addNewMenuItem() {
+      const name = document.getElementById("new-name").value.trim();
+      const price = parseFloat(document.getElementById("new-price").value);
+      const category = document.getElementById("new-cat").value;
+      const type = document.getElementById("new-type").value;
+
+      if (!name || isNaN(price) || price <= 0) {
+        showToast("Enter valid item name and price");
+        return;
+      }
+      menu.push({
+        id: "item_" + Date.now(),
+        name,
+        price: Math.round(price),
+        category,
+        type
+      });
+      saveMenu();
+      document.getElementById("new-name").value = "";
+      document.getElementById("new-price").value = "";
+      renderManageList();
+      renderPOS();
+      showToast(`Added "${name}" (₹${Math.round(price)})`);
+    }
+
+    function renderManageList() {
+      const q = document.getElementById("manage-search").value.trim().toLowerCase();
+      const list = menu.filter(m => !q || m.name.toLowerCase().includes(q) || m.category.toLowerCase().includes(q));
+      document.getElementById("manage-list").innerHTML = list.map(item => `
+        <div class="manage-row">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:700;">${item.name}</div>
+            <div style="font-size:11px;color:#9CA3AF;">${item.category}</div>
+          </div>
+          <div class="price-edit-group">
+            <span style="color:#FACC15;font-weight:800;">₹</span>
+            <input id="inp_${item.id}" class="price-input-sm" type="number" value="${item.price}" />
+            <button class="save-sm-btn" onclick="saveInlinePrice('${item.id}')">Save</button>
+            <button class="del-sm-btn" onclick="deleteMenuItem('${item.id}')">✕</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function saveInlinePrice(id) {
+      const inp = document.getElementById("inp_" + id);
+      const val = parseFloat(inp.value);
+      if (isNaN(val) || val <= 0) {
+        showToast("Enter valid price");
+        return;
+      }
+      const item = menu.find(m => m.id === id);
+      if (item) {
+        item.price = Math.round(val);
+        saveMenu();
+        renderPOS();
+        showToast(`Saved ₹${item.price} for ${item.name}`);
+      }
+    }
+
+    function deleteMenuItem(id) {
+      menu = menu.filter(m => m.id !== id);
+      delete cart[id];
+      saveMenu();
+      renderManageList();
+      renderPOS();
+      showToast("Item removed");
+    }
+
+    function resetDefaultMenu() {
+      if (confirm("Reset menu and prices to Food Hub defaults?")) {
+        menu = [...DEFAULT_MENU];
+        saveMenu();
+        renderManageList();
+        renderPOS();
+        showToast("Menu reset to defaults");
+      }
+    }
+
+    // Bill Modal & Receipt
+    function openBillModal() {
+      renderModalCart();
+      updateReceiptPreview();
+      document.getElementById("bill-modal").classList.add("open");
+    }
+
+    function closeBillModal() {
+      document.getElementById("bill-modal").classList.remove("open");
+    }
+
+    function renderModalCart() {
+      const entries = Object.entries(cart);
+      const el = document.getElementById("modal-cart-items");
+      if (!entries.length) {
+        el.innerHTML = `<div style="color:#9CA3AF;font-size:13px;text-align:center;padding:10px;">Cart is empty</div>`;
+        return;
+      }
+      el.innerHTML = entries.map(([id, qty]) => {
+        const item = menu.find(m => m.id === id);
+        if (!item) return "";
+        return `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #222;">
+            <div style="font-size:13px;font-weight:700;">${item.name} <span style="color:#9CA3AF;">(₹${item.price})</span></div>
+            <div class="stepper">
+              <button onclick="changeQty('${id}', -1)">−</button>
+              <span>${qty}</span>
+              <button onclick="changeQty('${id}', 1)">+</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function buildBillData() {
+      const lines = [];
+      let subtotal = 0;
+      for (const [id, qty] of Object.entries(cart)) {
+        const item = menu.find(m => m.id === id);
+        if (item) {
+          const amt = item.price * qty;
+          subtotal += amt;
+          lines.push({ name: item.name, qty, price: item.price, amt });
+        }
+      }
+      const discount = Math.max(0, parseFloat(document.getElementById("bill-discount").value) || 0);
+      const grandTotal = Math.max(0, subtotal - discount);
+      const customer = document.getElementById("bill-customer").value.trim() || "Walk-in";
+      const orderType = document.getElementById("bill-order-type").value;
+      const payment = document.getElementById("bill-payment").value;
+      const now = new Date();
+      const billNo = "FH" + String(bills.length + 101);
+      const dateStr = now.toLocaleDateString("en-IN") + " " + now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+
+      return { billNo, dateStr, customer, orderType, payment, lines, subtotal, discount, grandTotal };
+    }
+
+    function formatThermalText(b) {
+      const sep = "--------------------------------";
+      let txt = "";
+      txt += "            FOOD HUB            \n";
+      txt += "   Chinese Fast Food Center     \n";
+      txt += "           Jharsuguda           \n";
+      txt += sep + "\n";
+      txt += `Bill: ${b.billNo}   ${b.orderType}
+`;
+      txt += `Date: ${b.dateStr}
+`;
+      txt += `Cust: ${b.customer} (${b.payment})
+`;
+      txt += sep + "\n";
+      txt += "Item              Qty     Amount\n";
+      txt += sep + "\n";
+      b.lines.forEach(l => {
+        const name = l.name.length > 17 ? l.name.slice(0, 17) : l.name.padEnd(17, " ");
+        const qty = String(l.qty).padStart(3, " ");
+        const amt = ("Rs." + l.amt).padStart(10, " ");
+        txt += `${name} ${qty} ${amt}
+`;
+      });
+      txt += sep + "\n";
+      if (b.discount > 0) {
+        txt += `Subtotal:              Rs.${b.subtotal}
+`;
+        txt += `Discount:             -Rs.${b.discount}
+`;
+      }
+      txt += `GRAND TOTAL:           Rs.${b.grandTotal}/-
+`;
+      txt += sep + "\n";
+      txt += "       Tasty & Delicious        \n";
+      txt += "   Best Quality & Hygienic      \n";
+      txt += "    Thank You! Visit Again      \n\n";
+      return txt;
+    }
+
+    function updateReceiptPreview() {
+      const b = buildBillData();
+      document.getElementById("print-area").textContent = formatThermalText(b);
+    }
+
+    function saveCurrentBill() {
+      const b = buildBillData();
+      if (!b.lines.length) return null;
+      bills.unshift(b);
+      localStorage.setItem(BILLS_KEY, JSON.stringify(bills));
+      return b;
+    }
+
+    // Web Bluetooth ESC/POS Printer Connection
+    async function connectBluetoothPrinter() {
+      if (!navigator.bluetooth) {
+        showToast("Use Chrome Bluetooth or RawBT App");
+        return;
+      }
+      try {
+        const device = await navigator.bluetooth.requestDevice({
+          acceptAllDevices: true,
+          optionalServices: [
+            "000018f0-0000-1000-8000-00805f9b34fb",
+            "49535343-fe7d-4ae5-8fa9-9fafd205e455",
+            "e7810a71-73ae-499d-8c15-faa9aef0c3f2"
+          ]
+        });
+        const server = await device.gatt.connect();
+        const services = await server.getPrimaryServices();
+        for (const service of services) {
+          const chars = await service.getCharacteristics();
+          for (const ch of chars) {
+            if (ch.properties.write || ch.properties.writeWithoutResponse) {
+              btCharacteristic = ch;
+              break;
+            }
+          }
+          if (btCharacteristic) break;
+        }
+        if (btCharacteristic) {
+          document.getElementById("bt-status-btn").classList.add("connected");
+          document.getElementById("bt-status-text").textContent = device.name || "Printer Ready";
+          showToast("Bluetooth Printer Connected!");
+        }
+      } catch (err) {
+        showToast("Bluetooth connection cancelled");
+      }
+    }
+
+    async function sendEscPosBytes(receiptText) {
+      if (!btCharacteristic) return false;
+      const encoder = new TextEncoder();
+      const init = new Uint8Array([0x1B, 0x40]); // ESC @ Initialize
+      const cut = new Uint8Array([0x1D, 0x56, 0x41, 0x10]); // GS V Cut
+      const body = encoder.encode(receiptText);
+      const full = new Uint8Array(init.length + body.length + cut.length);
+      full.set(init, 0);
+      full.set(body, init.length);
+      full.set(cut, init.length + body.length);
+
+      // Send in 100-byte BLE chunks
+      for (let i = 0; i < full.length; i += 100) {
+        const chunk = full.slice(i, i + 100);
+        if (btCharacteristic.properties.writeWithoutResponse) {
+          await btCharacteristic.writeValueWithoutResponse(chunk);
+        } else {
+          await btCharacteristic.writeValue(chunk);
+        }
+      }
+      return true;
+    }
+
+    function doPrint(text) {
+      document.getElementById("print-root").textContent = text;
+      window.print();
+    }
+
+    async function printThermalBluetooth() {
+      const b = saveCurrentBill();
+      if (!b) { showToast("Add items first"); return; }
+      const receipt = formatThermalText(b);
+
+      if (btCharacteristic) {
+        try {
+          await sendEscPosBytes(receipt);
+          showToast("Printed on Thermal Printer!");
+          cart = {};
+          renderPOS();
+          closeBillModal();
+          return;
+        } catch (e) {
+          showToast("BLE error, opening print dialog...");
+        }
+      } else {
+        showToast("Bill Saved! Opening print...");
+      }
+      doPrint(receipt);
+      cart = {};
+      renderPOS();
+      closeBillModal();
+    }
+
+    function printViaRawBT() {
+      const b = saveCurrentBill();
+      if (!b) { showToast("Add items first"); return; }
+      const receipt = formatThermalText(b);
+      const base64 = btoa(unescape(encodeURIComponent(receipt)));
+      window.location.href = "rawbt:base64," + base64;
+      cart = {};
+      renderPOS();
+      closeBillModal();
+    }
+
+    function printSystem58mm() {
+      const b = saveCurrentBill();
+      if (!b) { showToast("Add items first"); return; }
+      doPrint(formatThermalText(b));
+      cart = {};
+      renderPOS();
+      closeBillModal();
+    }
+
+    function shareWhatsAppBill() {
+      const b = buildBillData();
+      if (!b.lines.length) { showToast("Add items first"); return; }
+      let msg = `*FOOD HUB – JHARSUGUDA*
+_Chinese Fast Food Center_
+Bill: *${b.billNo}* (${b.orderType})
+Date: ${b.dateStr}
+------------------------
+`;
+      b.lines.forEach(l => {
+        msg += `• ${l.name} x${l.qty} = *₹${l.amt}*
+`;
+      });
+      msg += `------------------------
+*TOTAL: ₹${b.grandTotal}/-* (${b.payment})
+_Tasty & Delicious!_`;
+      window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
+    }
+
+    // Sales & History
+    function renderSales() {
+      let total = 0, upi = 0;
+      bills.forEach(b => {
+        total += b.grandTotal;
+        if (b.payment === "UPI") upi += b.grandTotal;
+      });
+      document.getElementById("stat-total").textContent = "₹" + total;
+      document.getElementById("stat-count").textContent = bills.length;
+      document.getElementById("stat-upi").textContent = "₹" + upi;
+
+      const list = document.getElementById("bills-list");
+      if (!bills.length) {
+        list.innerHTML = `<div style="color:#9CA3AF;font-size:13px;text-align:center;padding:12px;">No saved bills yet.</div>`;
+        return;
+      }
+      list.innerHTML = bills.map((b, idx) => `
+        <div class="manage-row">
+          <div>
+            <div style="font-size:13px;font-weight:800;">${b.billNo} • <span style="color:#FACC15;">₹${b.grandTotal}/-</span></div>
+            <div style="font-size:11px;color:#9CA3AF;">${b.dateStr} • ${b.customer} (${b.payment})</div>
+          </div>
+          <button class="save-sm-btn" onclick="reprintBill(${idx})">🖨️ Reprint</button>
+        </div>
+      `).join("");
+    }
+
+    async function reprintBill(idx) {
+      const b = bills[idx];
+      if (!b) return;
+      const receipt = formatThermalText(b);
+      document.getElementById("print-area").textContent = receipt;
+      if (btCharacteristic) {
+        await sendEscPosBytes(receipt);
+        showToast("Reprinted on Thermal Printer!");
+      } else {
+        doPrint(receipt);
+      }
+    }
+
+    function clearBillsHistory() {
+      if (confirm("Clear all saved bill history?")) {
+        bills = [];
+        localStorage.setItem(BILLS_KEY, "[]");
+        renderSales();
+      }
+    }
+
+    // Initialize
+    initBrandingIcon();
+    renderCategories();
+    renderPOS();
+  </script>
+</body>
+</html>
